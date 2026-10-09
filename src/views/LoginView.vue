@@ -7,7 +7,7 @@
           <div class="capy-ears"></div>
         </div>
         <h1 class="app-title mono">CapyShowTime</h1>
-        <p class="app-subtitle">O TV Show Time dos moradores da Capihouse</p>
+        <p class="app-subtitle">O TV Show Time dos amigos da Capihouse</p>
       </div>
 
       <form @submit.prevent="handleLogin" class="login-form">

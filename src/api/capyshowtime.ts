@@ -88,11 +88,12 @@ export const capyApi = {
     return apiClient.post('/capyshowtime/series/status', { tmdb_id: tmdbId, status })
   },
 
-  rateEpisode(episodeId: number, rating?: number | null, isWatched: boolean = true) {
+  rateEpisode(episodeId: number, rating?: number | null, isWatched: boolean = true, removeRating: boolean = false) {
     return apiClient.post('/capyshowtime/episodes/rate', {
       episode_id: episodeId,
       rating: rating,
-      is_watched: isWatched
+      is_watched: isWatched,
+      remove_rating: removeRating
     })
   },
 

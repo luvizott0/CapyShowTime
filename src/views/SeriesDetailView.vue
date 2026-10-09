@@ -84,7 +84,7 @@
               </span>
               <span v-else class="rating-val-empty mono">--</span>
             </div>
-            <span class="rating-subtext">Média dos moradores</span>
+            <span class="rating-subtext">Média dos amigos</span>
           </div>
 
           <!-- 3. Média TMDB -->
@@ -103,9 +103,9 @@
           <p class="overview-text">{{ series.overview }}</p>
         </div>
 
-        <!-- Moradores assistindo -->
+        <!-- Amigos assistindo -->
         <div v-if="housemates.length > 0" class="housemates-section">
-          <h3 class="section-title">Moradores que acompanham</h3>
+          <h3 class="section-title">Amigos que acompanham</h3>
           <div class="housemates-avatars">
             <div
               v-for="hm in housemates"
@@ -368,7 +368,7 @@ async function onRatingRemoved() {
   if (!activeEpisode.value) return
   isRatingOpen.value = false
   try {
-    const res = await capyApi.rateEpisode(activeEpisode.value.id, null, activeEpisode.value.is_watched)
+    const res = await capyApi.rateEpisode(activeEpisode.value.id, null, activeEpisode.value.is_watched, true)
     activeEpisode.value.user_rating = null
     updateRatingsFromResponse(res.data)
     seriesStore.invalidateAllCache()

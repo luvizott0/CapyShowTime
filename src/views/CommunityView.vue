@@ -4,8 +4,8 @@
       <div class="container">
         <div class="header-top">
           <div>
-            <h1 class="header-title mono">Atividade da Casa</h1>
-            <p class="header-subtitle">O que os moradores da Capihouse estão assistindo</p>
+            <h1 class="header-title mono">Atividades da CapyShowTime</h1>
+            <p class="header-subtitle">O que os amigos da capihouse estão assistindo</p>
           </div>
           <RefreshButton
             :is-refreshing="seriesStore.isRefreshingCommunity"
@@ -24,7 +24,7 @@
       <div v-else-if="seriesStore.communityActivities.length === 0" class="empty-state fade-in">
         <Users :size="48" class="empty-icon" />
         <h3 class="empty-title">Nenhuma atividade recente</h3>
-        <p class="empty-desc">Assim que alguém marcar episódios como assistidos, as novidades aparecerão aqui!</p>
+        <p class="empty-desc">Assim que algum amigo marcar episódios como assistidos, as novidades aparecerão aqui!</p>
       </div>
 
       <div v-else class="activities-list fade-in">

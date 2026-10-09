@@ -57,8 +57,8 @@
         </button>
 
         <!-- Média da Capihouse (se houver) -->
-        <div v-if="episode.community_rating" class="community-rating" title="Média dos moradores">
-          <span class="mono">Casa: {{ episode.community_rating.toFixed(1) }}</span>
+        <div v-if="episode.community_rating" class="community-rating" title="Média dos amigos">
+          <span class="mono">Amigos: {{ episode.community_rating.toFixed(1) }}</span>
         </div>
       </div>
     </div>
