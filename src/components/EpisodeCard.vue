@@ -2,8 +2,8 @@
   <div class="episode-card" :class="{ watched: episode.is_watched }">
     <div class="episode-media" @click="$emit('open-detail', episode)">
       <img
-        v-if="episode.still_url"
-        :src="episode.still_url"
+        v-if="resolveStill(episode)"
+        :src="resolveStill(episode)"
         :alt="episode.name"
         class="episode-thumbnail"
         loading="lazy"
@@ -68,6 +68,7 @@
 <script setup lang="ts">
 import { Check, Star, MessageSquare, Film } from 'lucide-vue-next'
 import type { Episode } from '@/api/capyshowtime'
+import { getStillUrl } from '@/utils/images'
 
 defineProps<{
   episode: Episode
@@ -79,6 +80,10 @@ defineEmits<{
   (e: 'open-comments', episode: Episode): void
   (e: 'open-detail', episode: Episode): void
 }>()
+
+function resolveStill(episode: any): string {
+  return getStillUrl(episode.still_url || episode.still_path)
+}
 
 function formatNum(n: number): string {
   return n < 10 ? `0${n}` : `${n}`

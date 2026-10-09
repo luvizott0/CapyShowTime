@@ -2,18 +2,26 @@
   <div class="community-page">
     <header class="page-header">
       <div class="container">
-        <h1 class="header-title mono">Atividade da Casa</h1>
-        <p class="header-subtitle">O que os moradores da Capihouse estão assistindo</p>
+        <div class="header-top">
+          <div>
+            <h1 class="header-title mono">Atividade da Casa</h1>
+            <p class="header-subtitle">O que os moradores da Capihouse estão assistindo</p>
+          </div>
+          <RefreshButton
+            :is-refreshing="seriesStore.isRefreshingCommunity"
+            @refresh="onForceRefresh"
+          />
+        </div>
       </div>
     </header>
 
     <main class="container page-body">
-      <div v-if="loading" class="loading-state">
+      <div v-if="seriesStore.isRefreshingCommunity && !seriesStore.communityLoaded" class="loading-state">
         <div class="spinner"></div>
         <p>Carregando atividades...</p>
       </div>
 
-      <div v-else-if="activities.length === 0" class="empty-state fade-in">
+      <div v-else-if="seriesStore.communityActivities.length === 0" class="empty-state fade-in">
         <Users :size="48" class="empty-icon" />
         <h3 class="empty-title">Nenhuma atividade recente</h3>
         <p class="empty-desc">Assim que alguém marcar episódios como assistidos, as novidades aparecerão aqui!</p>
@@ -21,7 +29,7 @@
 
       <div v-else class="activities-list fade-in">
         <div
-          v-for="act in activities"
+          v-for="act in seriesStore.communityActivities"
           :key="act.id"
           class="activity-card"
         >
@@ -43,8 +51,8 @@
 
           <div class="activity-content" @click="goToSeries(act.series.tmdb_id)">
             <img
-              v-if="act.series.poster_url"
-              :src="act.series.poster_url"
+              v-if="resolvePoster(act.series)"
+              :src="resolvePoster(act.series)"
               :alt="act.series.name"
               class="series-poster"
             />
@@ -70,25 +78,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Users, Star } from 'lucide-vue-next'
-import { capyApi } from '@/api/capyshowtime'
+import { useSeriesStore } from '@/stores/series'
+import { getPosterUrl } from '@/utils/images'
+import RefreshButton from '@/components/RefreshButton.vue'
 
 const router = useRouter()
-const activities = ref<any[]>([])
-const loading = ref(true)
+const seriesStore = useSeriesStore()
 
-async function loadActivities() {
-  loading.value = true
-  try {
-    const res = await capyApi.getCommunityActivity()
-    activities.value = res.data
-  } catch (err) {
-    console.error('Erro ao carregar atividade:', err)
-  } finally {
-    loading.value = false
-  }
+function resolvePoster(series: any): string {
+  return getPosterUrl(series.poster_url || series.poster_path)
+}
+
+function onForceRefresh() {
+  seriesStore.fetchCommunity(true)
 }
 
 function formatNum(n: number): string {
@@ -104,7 +109,7 @@ function goToSeries(tmdbId: number) {
 }
 
 onMounted(() => {
-  loadActivities()
+  seriesStore.fetchCommunity(false)
 })
 </script>
 
@@ -117,6 +122,12 @@ onMounted(() => {
   padding: 24px 0 16px;
   background-color: var(--bg-surface);
   border-bottom: 1px solid var(--color-border);
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .header-title {

@@ -9,8 +9,8 @@
       <!-- Backdrop Banner Header -->
       <div class="backdrop-wrapper">
         <img
-          v-if="series.backdrop_url"
-          :src="series.backdrop_url"
+          v-if="resolveBackdrop(series)"
+          :src="resolveBackdrop(series)"
           :alt="series.name"
           class="backdrop-img"
         />
@@ -25,8 +25,8 @@
         <div class="series-header-info">
           <div class="poster-box">
             <img
-              v-if="series.poster_url"
-              :src="series.poster_url"
+              v-if="resolvePoster(series)"
+              :src="resolvePoster(series)"
               :alt="series.name"
               class="poster-img"
             />
@@ -197,15 +197,25 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
 import { ArrowLeft, Film, Star, Users } from 'lucide-vue-next'
 import { capyApi, type Series, type Season, type Episode } from '@/api/capyshowtime'
+import { useSeriesStore } from '@/stores/series'
+import { getPosterUrl, getBackdropUrl } from '@/utils/images'
 import EpisodeCard from '@/components/EpisodeCard.vue'
 import RatingModal from '@/components/RatingModal.vue'
 import EpisodeCommentsModal from '@/components/EpisodeCommentsModal.vue'
 
 const route = useRoute()
 const tmdbId = Number(route.params.id)
+const seriesStore = useSeriesStore()
+
+function resolvePoster(s: any): string {
+  return getPosterUrl(s?.poster_url || s?.poster_path)
+}
+
+function resolveBackdrop(s: any): string {
+  return getBackdropUrl(s?.backdrop_url || s?.backdrop_path)
+}
 
 const loading = ref(true)
 const seasonLoading = ref(false)
@@ -271,6 +281,7 @@ async function onStatusChange(e: Event) {
   try {
     const res = await capyApi.setStatus(tmdbId, val)
     userStatus.value = res.data.status
+    seriesStore.invalidateAllCache()
   } catch (err) {
     console.error('Erro ao alterar status:', err)
   }
@@ -282,6 +293,7 @@ async function handleToggleWatched(ep: Episode) {
   try {
     const res = await capyApi.rateEpisode(ep.id, ep.user_rating, newWatched)
     updateRatingsFromResponse(res.data)
+    seriesStore.invalidateAllCache()
   } catch (err) {
     ep.is_watched = !newWatched // rollback
     console.error('Erro ao marcar assistido:', err)
@@ -310,6 +322,7 @@ async function onRatingSaved(rating: number) {
     activeEpisode.value.is_watched = true
     activeEpisode.value.user_rating = rating
     updateRatingsFromResponse(res.data)
+    seriesStore.invalidateAllCache()
   } catch (err) {
     console.error('Erro ao salvar nota:', err)
   }
@@ -322,6 +335,7 @@ async function onRatingRemoved() {
     const res = await capyApi.rateEpisode(activeEpisode.value.id, null, activeEpisode.value.is_watched)
     activeEpisode.value.user_rating = null
     updateRatingsFromResponse(res.data)
+    seriesStore.invalidateAllCache()
   } catch (err) {
     console.error('Erro ao remover nota:', err)
   }

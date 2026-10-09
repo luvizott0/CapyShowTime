@@ -2,7 +2,14 @@
   <div class="discover-page">
     <header class="page-header">
       <div class="container">
-        <h1 class="header-title mono">Descobrir Séries</h1>
+        <div class="header-top">
+          <h1 class="header-title mono">Descobrir Séries</h1>
+          <RefreshButton
+            v-if="!searchQuery.trim()"
+            :is-refreshing="seriesStore.isRefreshingDiscover"
+            @refresh="onForceRefresh"
+          />
+        </div>
         <div class="search-bar">
           <Search :size="18" class="search-icon" />
           <input
@@ -20,8 +27,8 @@
     </header>
 
     <main class="container page-body">
-      <!-- Loading State -->
-      <div v-if="loading" class="loading-state">
+      <!-- Loading State da Busca -->
+      <div v-if="searching" class="loading-state">
         <div class="spinner"></div>
         <p>Buscando séries...</p>
       </div>
@@ -41,8 +48,8 @@
           >
             <div class="poster-container">
               <img
-                v-if="show.poster_path"
-                :src="`https://image.tmdb.org/t/p/w500${show.poster_path}`"
+                v-if="resolvePoster(show)"
+                :src="resolvePoster(show)"
                 :alt="show.name"
                 class="poster-img"
                 loading="lazy"
@@ -62,21 +69,21 @@
         </div>
       </section>
 
-      <!-- Trending / Popular (quando não há busca ativa) -->
+      <!-- Trending / Popular (com cache instantâneo) -->
       <div v-else class="fade-in">
         <section class="section">
           <h2 class="section-title mono">Em Alta Esta Semana</h2>
           <div class="series-grid">
             <div
-              v-for="show in trendingShows"
+              v-for="show in seriesStore.trendingShows"
               :key="show.id"
               class="series-card"
               @click="goToSeries(show.id)"
             >
               <div class="poster-container">
                 <img
-                  v-if="show.poster_path"
-                  :src="`https://image.tmdb.org/t/p/w500${show.poster_path}`"
+                  v-if="resolvePoster(show)"
+                  :src="resolvePoster(show)"
                   :alt="show.name"
                   class="poster-img"
                   loading="lazy"
@@ -100,15 +107,15 @@
           <h2 class="section-title mono">Mais Populares</h2>
           <div class="series-grid">
             <div
-              v-for="show in popularShows"
+              v-for="show in seriesStore.popularShows"
               :key="show.id"
               class="series-card"
               @click="goToSeries(show.id)"
             >
               <div class="poster-container">
                 <img
-                  v-if="show.poster_path"
-                  :src="`https://image.tmdb.org/t/p/w500${show.poster_path}`"
+                  v-if="resolvePoster(show)"
+                  :src="resolvePoster(show)"
                   :alt="show.name"
                   class="poster-img"
                   loading="lazy"
@@ -137,26 +144,24 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, X, Film } from 'lucide-vue-next'
 import { capyApi } from '@/api/capyshowtime'
+import { useSeriesStore } from '@/stores/series'
+import { getPosterUrl } from '@/utils/images'
+import RefreshButton from '@/components/RefreshButton.vue'
 
 const router = useRouter()
+const seriesStore = useSeriesStore()
+
 const searchQuery = ref('')
 const searchResults = ref<any[]>([])
-const trendingShows = ref<any[]>([])
-const popularShows = ref<any[]>([])
-const loading = ref(false)
+const searching = ref(false)
 let debounceTimeout: any = null
 
-async function loadInitialData() {
-  try {
-    const [trendRes, popRes] = await Promise.all([
-      capyApi.trending(),
-      capyApi.popular()
-    ])
-    trendingShows.value = trendRes.data.results || []
-    popularShows.value = popRes.data.results || []
-  } catch (err) {
-    console.error('Erro ao carregar catálogo inicial:', err)
-  }
+function resolvePoster(show: any): string {
+  return getPosterUrl(show.poster_url || show.poster_path)
+}
+
+function onForceRefresh() {
+  seriesStore.fetchDiscover(true)
 }
 
 function onSearchInput() {
@@ -167,14 +172,14 @@ function onSearchInput() {
   }
 
   debounceTimeout = setTimeout(async () => {
-    loading.value = true
+    searching.value = true
     try {
       const res = await capyApi.search(searchQuery.value)
       searchResults.value = res.data.results || []
     } catch (err) {
       console.error('Erro na busca:', err)
     } finally {
-      loading.value = false
+      searching.value = false
     }
   }, 400)
 }
@@ -194,7 +199,7 @@ function goToSeries(tmdbId: number) {
 }
 
 onMounted(() => {
-  loadInitialData()
+  seriesStore.fetchDiscover(false)
 })
 </script>
 
@@ -212,10 +217,16 @@ onMounted(() => {
   z-index: 10;
 }
 
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
 .header-title {
   font-size: 1.4rem;
   font-weight: 700;
-  margin-bottom: 14px;
 }
 
 .search-bar {

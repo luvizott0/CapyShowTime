@@ -7,22 +7,29 @@
             <h1 class="header-title mono">Para Assistir</h1>
             <p class="header-subtitle">Seus próximos episódios na fila</p>
           </div>
-          <router-link to="/discover" class="btn-icon-link" title="Buscar Séries">
-            <Plus :size="20" />
-          </router-link>
+          <div class="header-actions">
+            <!-- Botão de Recarregamento Forçado (Cache bypass) -->
+            <RefreshButton
+              :is-refreshing="seriesStore.isRefreshingUpNext"
+              @refresh="onForceRefresh"
+            />
+            <router-link to="/discover" class="btn-icon-link" title="Buscar Séries">
+              <Plus :size="20" />
+            </router-link>
+          </div>
         </div>
       </div>
     </header>
 
     <main class="container page-body">
-      <!-- Loading State -->
-      <div v-if="loading" class="loading-state">
+      <!-- Loading State Inicial (apenas se nunca carregou antes e não tem cache) -->
+      <div v-if="seriesStore.isRefreshingUpNext && !seriesStore.upNextLoaded" class="loading-state">
         <div class="spinner"></div>
         <p>Carregando sua fila...</p>
       </div>
 
       <!-- Empty State -->
-      <div v-else-if="upNextList.length === 0" class="empty-state fade-in">
+      <div v-else-if="seriesStore.upNextList.length === 0" class="empty-state fade-in">
         <div class="empty-icon-box">
           <Tv :size="48" class="empty-icon" />
         </div>
@@ -36,17 +43,17 @@
         </router-link>
       </div>
 
-      <!-- Up Next List -->
+      <!-- Up Next List (carregamento instantâneo do cache) -->
       <div v-else class="up-next-grid fade-in">
         <div
-          v-for="item in upNextList"
+          v-for="item in seriesStore.upNextList"
           :key="item.series.id"
           class="up-next-card"
         >
           <div class="card-poster" @click="goToSeries(item.series.tmdb_id)">
             <img
-              v-if="item.series.poster_url"
-              :src="item.series.poster_url"
+              v-if="resolvePoster(item.series)"
+              :src="resolvePoster(item.series)"
               :alt="item.series.name"
               class="poster-img"
               loading="lazy"
@@ -124,25 +131,23 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Tv, Plus, Search, Film, Check, ChevronRight } from 'lucide-vue-next'
 import { capyApi } from '@/api/capyshowtime'
+import { useSeriesStore } from '@/stores/series'
+import { getPosterUrl } from '@/utils/images'
 import RatingModal from '@/components/RatingModal.vue'
+import RefreshButton from '@/components/RefreshButton.vue'
 
 const router = useRouter()
-const upNextList = ref<any[]>([])
-const loading = ref(true)
+const seriesStore = useSeriesStore()
 
 const isRatingModalOpen = ref(false)
 const currentRatingEp = ref<any | null>(null)
 
-async function fetchUpNext() {
-  loading.value = true
-  try {
-    const res = await capyApi.getUpNext()
-    upNextList.value = res.data
-  } catch (err) {
-    console.error('Erro ao carregar Up Next:', err)
-  } finally {
-    loading.value = false
-  }
+function resolvePoster(series: any): string {
+  return getPosterUrl(series.poster_url || series.poster_path)
+}
+
+function onForceRefresh() {
+  seriesStore.fetchUpNext(true)
 }
 
 function formatNum(n: number): string {
@@ -159,9 +164,7 @@ function goToEpisode(tmdbId: number, seasonNumber: number, episodeId: number) {
 
 function markWatchedAndRate(item: any) {
   currentRatingEp.value = item.next_episode
-  // Marcar como visto no backend imediatamente
   capyApi.rateEpisode(item.next_episode.id, null, true).then(() => {
-    // Abre o modal de nota para ele dar a nota se desejar
     isRatingModalOpen.value = true
   })
 }
@@ -170,12 +173,12 @@ async function handleSaveRating(rating: number) {
   if (currentRatingEp.value) {
     await capyApi.rateEpisode(currentRatingEp.value.id, rating, true)
     isRatingModalOpen.value = false
-    await fetchUpNext()
+    await seriesStore.fetchUpNext(true)
   }
 }
 
 onMounted(() => {
-  fetchUpNext()
+  seriesStore.fetchUpNext(false)
 })
 </script>
 
@@ -196,6 +199,12 @@ onMounted(() => {
   align-items: center;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .header-title {
   font-size: 1.5rem;
   font-weight: 700;
@@ -208,8 +217,8 @@ onMounted(() => {
 }
 
 .btn-icon-link {
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -217,6 +226,12 @@ onMounted(() => {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
   color: var(--text-main);
+  transition: all 0.2s;
+}
+
+.btn-icon-link:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
 .page-body {

@@ -2,7 +2,15 @@
   <div class="my-list-page">
     <header class="page-header">
       <div class="container">
-        <h1 class="header-title mono">Minha Lista</h1>
+        <div class="header-top">
+          <h1 class="header-title mono">Minha Lista</h1>
+          <!-- Botão de Recarregamento Forçado -->
+          <RefreshButton
+            :is-refreshing="seriesStore.isRefreshingMyList"
+            @refresh="onForceRefresh"
+          />
+        </div>
+
         <!-- Abas de Filtro -->
         <div class="tabs-container">
           <button
@@ -19,7 +27,8 @@
     </header>
 
     <main class="container page-body">
-      <div v-if="loading" class="loading-state">
+      <!-- Loading State Inicial -->
+      <div v-if="seriesStore.isRefreshingMyList && !seriesStore.myListLoaded" class="loading-state">
         <div class="spinner"></div>
         <p>Carregando sua lista...</p>
       </div>
@@ -43,8 +52,8 @@
         >
           <div class="poster-container">
             <img
-              v-if="item.series.poster_url"
-              :src="item.series.poster_url"
+              v-if="resolvePoster(item.series)"
+              :src="resolvePoster(item.series)"
               :alt="item.series.name"
               class="poster-img"
               loading="lazy"
@@ -70,11 +79,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Bookmark, Search, Film } from 'lucide-vue-next'
-import { capyApi } from '@/api/capyshowtime'
+import { useSeriesStore } from '@/stores/series'
+import { getPosterUrl } from '@/utils/images'
+import RefreshButton from '@/components/RefreshButton.vue'
 
 const router = useRouter()
-const items = ref<any[]>([])
-const loading = ref(true)
+const seriesStore = useSeriesStore()
 const currentTab = ref('all')
 
 const tabs = [
@@ -84,21 +94,17 @@ const tabs = [
   { label: 'Concluídas', value: 'completed' },
 ]
 
-async function loadList() {
-  loading.value = true
-  try {
-    const res = await capyApi.getMyList()
-    items.value = res.data
-  } catch (err) {
-    console.error('Erro ao carregar lista:', err)
-  } finally {
-    loading.value = false
-  }
+function resolvePoster(series: any): string {
+  return getPosterUrl(series.poster_url || series.poster_path)
+}
+
+function onForceRefresh() {
+  seriesStore.fetchMyList(true)
 }
 
 const filteredList = computed(() => {
-  if (currentTab.value === 'all') return items.value
-  return items.value.filter(i => i.status === currentTab.value)
+  if (currentTab.value === 'all') return seriesStore.myList
+  return seriesStore.myList.filter(i => i.status === currentTab.value)
 })
 
 function setTab(tab: string) {
@@ -120,7 +126,7 @@ function goToSeries(tmdbId: number) {
 }
 
 onMounted(() => {
-  loadList()
+  seriesStore.fetchMyList(false)
 })
 </script>
 
@@ -138,10 +144,16 @@ onMounted(() => {
   z-index: 10;
 }
 
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
 .header-title {
   font-size: 1.4rem;
   font-weight: 700;
-  margin-bottom: 14px;
 }
 
 .tabs-container {
