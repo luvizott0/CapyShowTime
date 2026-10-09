@@ -409,14 +409,14 @@ onMounted(() => {
 .backdrop-wrapper {
   position: relative;
   width: 100%;
-  height: 220px;
+  height: calc(220px + var(--safe-top));
   background-color: var(--bg-surface-elevated);
   overflow: hidden;
 }
 
 @media (min-width: 640px) {
   .backdrop-wrapper {
-    height: 320px;
+    height: calc(320px + var(--safe-top));
   }
 }
 
@@ -434,7 +434,7 @@ onMounted(() => {
 
 .back-btn {
   position: absolute;
-  top: 16px;
+  top: calc(var(--safe-top) + 14px);
   left: 16px;
   width: 38px;
   height: 38px;

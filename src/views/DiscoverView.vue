@@ -209,7 +209,7 @@ onMounted(() => {
 }
 
 .page-header {
-  padding: 24px 0 16px;
+  padding: calc(var(--safe-top) + 16px) 0 16px;
   background-color: var(--bg-surface);
   border-bottom: 1px solid var(--color-border);
   position: sticky;

@@ -108,7 +108,7 @@ onMounted(() => {
 
 <style scoped>
 .profile-page {
-  padding: 32px 0 90px;
+  padding: calc(var(--safe-top) + 24px) 0 90px;
 }
 
 .profile-card {

@@ -81,10 +81,11 @@ async function handleLogin() {
 <style scoped>
 .login-page {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: calc(var(--safe-top) + 20px) 20px calc(var(--safe-bottom) + 20px);
   background: radial-gradient(circle at top, #261f18 0%, #12100e 70%);
 }
 
