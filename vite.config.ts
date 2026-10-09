@@ -8,7 +8,14 @@ export default defineConfig({
     vue(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'capy-icon.svg'],
+      includeAssets: [
+        'favicon.ico',
+        'apple-touch-icon.png',
+        'favicon-96x96.png',
+        'web-app-manifest-192x192.png',
+        'web-app-manifest-512x512.png',
+        'capy-icon.svg'
+      ],
       manifest: {
         name: 'CapyShowTime - Séries da Casa',
         short_name: 'CapyShowTime',
@@ -21,14 +28,16 @@ export default defineConfig({
         scope: '/',
         icons: [
           {
-            src: '/capy-icon-192.png',
+            src: '/web-app-manifest-192x192.png',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'maskable any'
           },
           {
-            src: '/capy-icon-512.png',
+            src: '/web-app-manifest-512x512.png',
             sizes: '512x512',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'maskable any'
           }
         ]
       },
