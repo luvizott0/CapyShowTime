@@ -93,7 +93,7 @@ jobs:
           fi
 
           echo "🚀 Subindo serviço capyshowtime-pwa via docker compose em $TARGET_DIR..."
-          docker compose --project-directory "$TARGET_DIR" -f "$TARGET_DIR/docker-compose.yml" up -d --no-deps capyshowtime-pwa
+          docker compose --project-directory "$TARGET_DIR" -f "$TARGET_DIR/docker-compose.yml" up -d --force-recreate --no-deps capyshowtime-pwa
 
           echo "🩺 Verificando status do contêiner..."
           PWA_PORT=$(docker port capyshowtime-pwa 80/tcp 2>/dev/null | head -n 1 | awk -F: '{print $NF}' || echo "80")
