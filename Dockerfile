@@ -1,23 +1,40 @@
-# Build stage
-FROM node:22-alpine AS build
+# Stage 1: Build da aplicação Vue 3 / Vite
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm ci
+# Copiar arquivos de dependências
+COPY package.json package-lock.json ./
 
-COPY . ./
+# Instalar dependências
+RUN npm ci --legacy-peer-deps
 
+# Copiar código fonte
+COPY . .
+
+# Variável de ambiente de build para o Vite (padrão /api utiliza o proxy reverso)
 ARG VITE_API_URL=/api
-ENV VITE_API_URL=${VITE_API_URL}
+ENV VITE_API_URL=$VITE_API_URL
 
+# Executar compilação de produção
 RUN npm run build
 
-# Production stage
+# Stage 2: Servidor Nginx ultra-leve
 FROM nginx:alpine
 
-COPY --from=build /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Instalar curl para healthchecks e deploy
+RUN apk add --no-cache curl
+
+# Copiar template de configuração com envsubst automático
+COPY docker/nginx.conf.template /etc/nginx/templates/default.conf.template
+
+# Copiar arquivos gerados no build para a pasta padrão do Nginx
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Variáveis padrão para resolução interna no Docker
+ENV BACKEND_HOST=capihouse-api
+ENV BACKEND_PORT=8000
+ENV PORT=80
 
 EXPOSE 80
 
