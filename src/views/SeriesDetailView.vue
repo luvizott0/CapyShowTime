@@ -15,7 +15,7 @@
           class="backdrop-img"
         />
         <div class="backdrop-overlay"></div>
-        <button class="back-btn" @click="$router.back()">
+        <button class="back-btn" @click="goBack">
           <ArrowLeft :size="20" />
         </button>
       </div>
@@ -169,6 +169,24 @@
       </div>
     </div>
 
+    <!-- Estado de Erro / Não Encontrado -->
+    <div v-else class="container empty-state-detail fade-in">
+      <div class="empty-icon-box">
+        <AlertCircle :size="48" class="error-icon" />
+      </div>
+      <h3 class="error-title">Série não encontrada</h3>
+      <p class="error-desc">{{ errorMessage || 'Não foi possível carregar as informações desta série. Verifique sua conexão e se a chave do TMDB está configurada.' }}</p>
+      <div class="error-actions">
+        <button class="btn-primary" @click="fetchSeriesDetails">
+          <RotateCw :size="16" />
+          <span>Tentar Novamente</span>
+        </button>
+        <button class="btn-secondary" @click="goBack">
+          <span>Voltar</span>
+        </button>
+      </div>
+    </div>
+
     <!-- Modal de Avaliação de Episódio -->
     <RatingModal
       :is-open="isRatingOpen"
@@ -197,7 +215,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { ArrowLeft, Film, Star, Users } from 'lucide-vue-next'
+import { useRoute, useRouter } from 'vue-router'
+import { ArrowLeft, Film, Star, Users, AlertCircle, RotateCw } from 'lucide-vue-next'
 import { capyApi, type Series, type Season, type Episode } from '@/api/capyshowtime'
 import { useSeriesStore } from '@/stores/series'
 import { getPosterUrl, getBackdropUrl } from '@/utils/images'
@@ -206,6 +225,7 @@ import RatingModal from '@/components/RatingModal.vue'
 import EpisodeCommentsModal from '@/components/EpisodeCommentsModal.vue'
 
 const route = useRoute()
+const router = useRouter()
 const tmdbId = Number(route.params.id)
 const seriesStore = useSeriesStore()
 
@@ -217,8 +237,17 @@ function resolveBackdrop(s: any): string {
   return getBackdropUrl(s?.backdrop_url || s?.backdrop_path)
 }
 
+function goBack() {
+  if (window.history.length > 1) {
+    router.back()
+  } else {
+    router.push('/')
+  }
+}
+
 const loading = ref(true)
 const seasonLoading = ref(false)
+const errorMessage = ref<string | null>(null)
 const series = ref<Series | null>(null)
 const seasons = ref<Season[]>([])
 const episodes = ref<Episode[]>([])
@@ -240,21 +269,28 @@ const currentSeasonAverage = computed(() => {
 
 async function fetchSeriesDetails() {
   loading.value = true
+  errorMessage.value = null
   try {
     const res = await capyApi.getSeries(tmdbId)
+    if (!res.data || !res.data.series) {
+      throw new Error('Série não encontrada')
+    }
     series.value = res.data.series
     // Filtra temporada 0 se for especiais, ou mantém
-    seasons.value = res.data.seasons.filter((s: Season) => s.season_number > 0)
-    userStatus.value = res.data.user_status
-    userRatings.value = res.data.user_ratings
-    communityRatings.value = res.data.community_ratings
-    housemates.value = res.data.housemates
+    seasons.value = (res.data.seasons || []).filter((s: Season) => s.season_number > 0)
+    userStatus.value = res.data.user_status || null
+    userRatings.value = res.data.user_ratings || null
+    communityRatings.value = res.data.community_ratings || null
+    housemates.value = res.data.housemates || []
 
     // Carregar primeira temporada ou a temporada passada via query
     const querySeason = Number(route.query.season) || (seasons.value[0]?.season_number ?? 1)
-    await selectSeason(querySeason)
-  } catch (err) {
+    if (seasons.value.length > 0) {
+      await selectSeason(querySeason)
+    }
+  } catch (err: any) {
     console.error('Erro ao carregar série:', err)
+    errorMessage.value = err.response?.data?.message || err.message || 'Não foi possível carregar as informações desta série.'
   } finally {
     loading.value = false
   }
@@ -265,7 +301,7 @@ async function selectSeason(num: number) {
   seasonLoading.value = true
   try {
     const res = await capyApi.getSeason(tmdbId, num)
-    episodes.value = res.data.episodes
+    episodes.value = res.data.episodes || []
   } catch (err) {
     console.error('Erro ao carregar episódios da temporada:', err)
   } finally {
@@ -691,5 +727,45 @@ onMounted(() => {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+.empty-state-detail {
+  text-align: center;
+  padding: 80px 20px;
+}
+
+.empty-icon-box {
+  width: 80px;
+  height: 80px;
+  background-color: var(--bg-surface-elevated);
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.error-icon {
+  color: var(--color-danger);
+}
+
+.error-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text-main);
+}
+
+.error-desc {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  max-width: 400px;
+  margin: 0 auto 24px;
+}
+
+.error-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
 }
 </style>
