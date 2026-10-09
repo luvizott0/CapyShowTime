@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="128" fill="#161412"/>
+  <!-- Capybara Ears -->
+  <circle cx="150" cy="140" r="45" fill="#a66130"/>
+  <circle cx="150" cy="140" r="25" fill="#7d5628"/>
+  <circle cx="362" cy="140" r="45" fill="#a66130"/>
+  <circle cx="362" cy="140" r="25" fill="#7d5628"/>
+  <!-- TV Body with Yellow TV Time Border -->
+  <rect x="76" y="160" width="360" height="270" rx="40" fill="#26211c" stroke="#f5c518" stroke-width="24"/>
+  <!-- TV Screen -->
+  <rect x="110" y="194" width="230" height="200" rx="20" fill="#12100e"/>
+  <!-- Play and Star on screen -->
+  <polygon points="200,260 200,330 260,295" fill="#f5c518"/>
+  <!-- Control knobs -->
+  <circle cx="380" cy="240" r="18" fill="#f5c518"/>
+  <circle cx="380" cy="300" r="18" fill="#a66130"/>
+  <rect x="365" y="350" width="30" height="8" rx="4" fill="#a39990"/>
+  <!-- Antennas -->
+  <line x1="200" y1="160" x2="140" y2="80" stroke="#f5c518" stroke-width="14" stroke-linecap="round"/>
+  <line x1="312" y1="160" x2="372" y2="80" stroke="#f5c518" stroke-width="14" stroke-linecap="round"/>
+  <circle cx="135" cy="75" r="14" fill="#f5c518"/>
+  <circle cx="377" cy="75" r="14" fill="#f5c518"/>
+</svg>
