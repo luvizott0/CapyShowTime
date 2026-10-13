@@ -152,6 +152,53 @@
         </div>
       </section>
 
+      <!-- 3. Lista de Séries Abandonadas -->
+      <section class="profile-list-section">
+        <div class="section-header">
+          <div class="section-title-group">
+            <XCircle :size="18" class="section-icon dropped-icon" />
+            <h3 class="section-title mono">Séries Abandonadas</h3>
+          </div>
+          <span class="section-count mono">{{ droppedSeries.length }}</span>
+        </div>
+
+        <div v-if="droppedSeries.length === 0" class="empty-list-box">
+          <p>{{ isMe ? 'Você não possui séries marcadas como abandonadas.' : 'Nenhuma série abandonada.' }}</p>
+        </div>
+
+        <div v-else class="horizontal-series-scroll">
+          <div
+            v-for="item in droppedSeries"
+            :key="item.id"
+            class="scroll-series-card"
+            @click="goToSeries(item.series.tmdb_id)"
+          >
+            <div class="poster-container">
+              <img
+                v-if="resolvePoster(item.series)"
+                :src="resolvePoster(item.series)"
+                :alt="item.series.name"
+                class="poster-img"
+                loading="lazy"
+              />
+              <div v-else class="poster-placeholder">
+                <Film :size="26" />
+              </div>
+              <div class="status-pill dropped">
+                Abandonada
+              </div>
+              <div v-if="item.user_rating" class="rating-pill mono">
+                ★ {{ item.user_rating.toFixed(1) }}
+              </div>
+            </div>
+            <div class="series-info">
+              <h4 class="series-title">{{ item.series.name }}</h4>
+              <span class="series-meta mono">{{ item.series.number_of_seasons }} temp.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- Seção de Atualizações do App e Logout (Apenas no próprio perfil) -->
       <div v-if="isMe" class="profile-actions-card">
         <div class="app-updates-box">
@@ -221,6 +268,7 @@ import {
   ArrowLeft,
   Bookmark,
   CheckCircle2,
+  XCircle,
   Film,
   RefreshCw,
   RotateCcw
@@ -268,6 +316,10 @@ const toWatchSeries = computed(() => {
 
 const completedSeries = computed(() => {
   return seriesList.value.filter((item: any) => item.status === 'completed')
+})
+
+const droppedSeries = computed(() => {
+  return seriesList.value.filter((item: any) => item.status === 'dropped')
 })
 
 function resolvePoster(series: any): string {
@@ -506,6 +558,10 @@ onActivated(() => {
   color: var(--color-success);
 }
 
+.dropped-icon {
+  color: var(--color-danger, #ef4444);
+}
+
 .section-title {
   font-size: 1rem;
   font-weight: 700;
@@ -615,6 +671,11 @@ onActivated(() => {
 .status-pill.completed {
   color: var(--color-success);
   border-color: rgba(34, 197, 94, 0.35);
+}
+
+.status-pill.dropped {
+  color: var(--color-danger, #ef4444);
+  border-color: rgba(239, 68, 68, 0.35);
 }
 
 .rating-pill {

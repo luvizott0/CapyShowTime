@@ -48,29 +48,45 @@
       <div v-else-if="seriesStore.communityActivities.length === 0" class="empty-state fade-in">
         <Users :size="48" class="empty-icon" />
         <h3 class="empty-title">Nenhuma atividade recente</h3>
-        <p class="empty-desc">Assim que algum amigo marcar episódios como assistidos, as novidades aparecerão aqui!</p>
+        <p class="empty-desc">Assim que algum amigo avaliar episódios, comentar ou concluir séries, as novidades aparecerão aqui!</p>
       </div>
 
       <div v-else class="activities-list fade-in">
-        <h2 class="section-heading mono">Atividade Recente</h2>
+        <h2 class="section-heading mono">Destaques da Casa</h2>
         <div
           v-for="act in seriesStore.communityActivities"
           :key="act.id"
           class="activity-card"
         >
           <div class="user-row" @click="goToProfile(act.user.id)">
-            <img
-              v-if="act.user.avatar_url"
-              :src="act.user.avatar_url"
-              :alt="act.user.name"
-              class="user-avatar"
-            />
-            <div v-else class="user-avatar-placeholder">
-              {{ act.user.name.charAt(0) }}
+            <div class="user-main">
+              <img
+                v-if="act.user.avatar_url"
+                :src="act.user.avatar_url"
+                :alt="act.user.name"
+                class="user-avatar"
+              />
+              <div v-else class="user-avatar-placeholder">
+                {{ act.user.name.charAt(0) }}
+              </div>
+              <div class="user-meta">
+                <span class="user-name">{{ act.user.name }}</span>
+                <span class="activity-time">{{ act.watched_at }}</span>
+              </div>
             </div>
-            <div class="user-meta">
-              <span class="user-name">{{ act.user.name }}</span>
-              <span class="activity-time">{{ act.watched_at }}</span>
+
+            <!-- Badge do tipo de atividade relevante -->
+            <div class="activity-type-badge" :class="act.type || 'rating'">
+              <Trophy v-if="act.type === 'completed'" :size="13" />
+              <MessageSquare v-else-if="act.type === 'comment'" :size="13" />
+              <Star v-else :size="13" fill="currentColor" />
+              <span>
+                {{
+                  act.type === 'completed'
+                    ? 'Concluiu'
+                    : (act.type === 'comment' ? 'Comentou' : 'Avaliou')
+                }}
+              </span>
             </div>
           </div>
 
@@ -83,15 +99,45 @@
             />
             <div class="content-details">
               <h4 class="series-name">{{ act.series.name }}</h4>
-              <p class="ep-info">
+
+              <!-- Série Concluída -->
+              <div v-if="act.type === 'completed'" class="completion-box">
+                <span class="completion-pill">
+                  🏆 Concluiu a série inteira!
+                </span>
+                <span v-if="act.series.number_of_seasons" class="seasons-total mono">
+                  {{ act.series.number_of_seasons }} temp.
+                </span>
+              </div>
+
+              <!-- Episódio (Rating ou Comment) -->
+              <p v-else-if="act.episode" class="ep-info">
                 <span class="mono ep-code">S{{ formatNum(act.episode.season_number) }}E{{ formatNum(act.episode.episode_number) }}</span>
-                <span>{{ act.episode.name }}</span>
+                <span class="ep-title">{{ act.episode.name }}</span>
               </p>
 
+              <!-- Avaliação com Nota -->
               <div v-if="act.rating" class="rating-badge-row">
                 <div class="badge-rating mono">
                   <Star :size="14" fill="currentColor" />
-                  <span>{{ act.rating.toFixed(1) }}</span>
+                  <span>{{ Number(act.rating).toFixed(1) }} ★</span>
+                </div>
+              </div>
+
+              <!-- Comentário em Episódio -->
+              <div v-if="act.comment" class="comment-box" @click.stop>
+                <div
+                  v-if="act.comment.is_spoiler && !revealedSpoilers[act.id]"
+                  class="spoiler-warning"
+                  @click="toggleSpoiler(act.id)"
+                >
+                  <span>⚠️ Contém Spoiler (toque para ver)</span>
+                </div>
+                <div v-else class="comment-text-wrapper">
+                  <p class="comment-text">
+                    "{{ act.comment.content }}"
+                  </p>
+                  <span v-if="act.comment.is_spoiler" class="spoiler-tag mono">Spoiler</span>
                 </div>
               </div>
             </div>
@@ -103,9 +149,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Users, Star } from 'lucide-vue-next'
+import { Users, Star, MessageSquare, Trophy } from 'lucide-vue-next'
 import { capyApi } from '@/api/capyshowtime'
 import { useSeriesStore } from '@/stores/series'
 import { getPosterUrl } from '@/utils/images'
@@ -114,6 +160,11 @@ import RefreshButton from '@/components/RefreshButton.vue'
 const router = useRouter()
 const seriesStore = useSeriesStore()
 const houseUsers = ref<any[]>([])
+const revealedSpoilers = reactive<Record<string, boolean>>({})
+
+function toggleSpoiler(id: string) {
+  revealedSpoilers[id] = !revealedSpoilers[id]
+}
 
 function resolvePoster(series: any): string {
   return getPosterUrl(series.poster_url || series.poster_path)
@@ -274,9 +325,107 @@ onMounted(() => {
 .user-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
   margin-bottom: 12px;
   cursor: pointer;
+}
+
+.user-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.activity-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+}
+
+.activity-type-badge.rating {
+  background: rgba(245, 197, 24, 0.15);
+  color: var(--color-accent);
+  border: 1px solid rgba(245, 197, 24, 0.3);
+}
+
+.activity-type-badge.comment {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.activity-type-badge.completed {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--color-success);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.completion-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+  flex-wrap: wrap;
+}
+
+.completion-pill {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--color-success);
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+}
+
+.seasons-total {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.comment-box {
+  margin-top: 8px;
+  background-color: var(--bg-surface);
+  border-left: 3px solid var(--color-primary);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: 8px 10px;
+}
+
+.spoiler-warning {
+  font-size: 0.75rem;
+  color: #f59e0b;
+  cursor: pointer;
+  font-weight: 600;
+  user-select: none;
+}
+
+.comment-text {
+  font-size: 0.82rem;
+  color: var(--text-main);
+  font-style: italic;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.comment-text-wrapper {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.spoiler-tag {
+  font-size: 0.65rem;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.15);
+  padding: 1px 5px;
+  border-radius: 3px;
+  flex-shrink: 0;
 }
 
 .user-avatar {

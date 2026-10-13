@@ -95,6 +95,7 @@ const tabs = [
   { label: 'Assistindo', value: 'watching' },
   { label: 'Quero Assistir', value: 'plan_to_watch' },
   { label: 'Concluídas', value: 'completed' },
+  { label: 'Abandonadas', value: 'dropped' },
 ]
 
 function resolvePoster(series: any): string {
