@@ -393,6 +393,54 @@ const searchResults = ref<any[]>([])
 const searching = ref(false)
 let debounceTimeout: any = null
 
+// Tradução garantida de gêneros do TMDB para Português
+const GENRE_PT_MAP: Record<number, string> = {
+  10759: 'Ação e Aventura',
+  16: 'Animação',
+  35: 'Comédia',
+  80: 'Crime',
+  99: 'Documentário',
+  18: 'Drama',
+  10751: 'Família',
+  10762: 'Infantil',
+  9648: 'Mistério',
+  10763: 'Notícias',
+  10764: 'Reality Show',
+  10765: 'Ficção Científica e Fantasia',
+  10766: 'Novela',
+  10767: 'Entrevistas',
+  10768: 'Guerra e Política',
+  37: 'Faroeste'
+}
+
+const GENRE_NAME_PT_MAP: Record<string, string> = {
+  'Action & Adventure': 'Ação e Aventura',
+  'Animation': 'Animação',
+  'Comedy': 'Comédia',
+  'Crime': 'Crime',
+  'Documentary': 'Documentário',
+  'Drama': 'Drama',
+  'Family': 'Família',
+  'Kids': 'Infantil',
+  'Mystery': 'Mistério',
+  'News': 'Notícias',
+  'Reality': 'Reality Show',
+  'Sci-Fi & Fantasy': 'Ficção Científica e Fantasia',
+  'Sci-Fi & Fantasia': 'Ficção Científica e Fantasia',
+  'Soap': 'Novela',
+  'Talk': 'Entrevistas',
+  'Talk Show': 'Entrevistas',
+  'War & Politics': 'Guerra e Política',
+  'Western': 'Faroeste'
+}
+
+function translateGenre(g: { id: number; name: string }) {
+  return {
+    id: g.id,
+    name: GENRE_PT_MAP[g.id] || GENRE_NAME_PT_MAP[g.name] || g.name
+  }
+}
+
 // Estado dos filtros
 const showFiltersPanel = ref(false)
 const genresList = ref<{ id: number; name: string }[]>([
@@ -403,9 +451,11 @@ const genresList = ref<{ id: number; name: string }[]>([
   { id: 99, name: 'Documentário' },
   { id: 18, name: 'Drama' },
   { id: 10751, name: 'Família' },
+  { id: 10762, name: 'Infantil' },
   { id: 9648, name: 'Mistério' },
-  { id: 10764, name: 'Reality' },
-  { id: 10765, name: 'Sci-Fi & Fantasia' },
+  { id: 10764, name: 'Reality Show' },
+  { id: 10765, name: 'Ficção Científica e Fantasia' },
+  { id: 10766, name: 'Novela' },
   { id: 10768, name: 'Guerra e Política' },
   { id: 37, name: 'Faroeste' }
 ])
@@ -480,7 +530,7 @@ async function fetchGenres() {
   try {
     const res = await capyApi.genres()
     if (res.data?.genres?.length) {
-      genresList.value = res.data.genres
+      genresList.value = res.data.genres.map(translateGenre)
     }
   } catch (err) {
     console.error('Erro ao carregar gêneros:', err)
