@@ -213,7 +213,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onActivated } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   Clock,
@@ -226,6 +226,7 @@ import {
   RotateCcw
 } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
+import { useSeriesStore } from '@/stores/series'
 import { capyApi } from '@/api/capyshowtime'
 import { getPosterUrl } from '@/utils/images'
 import { usePwaUpdate } from '@/composables/usePwaUpdate'
@@ -233,6 +234,7 @@ import { usePwaUpdate } from '@/composables/usePwaUpdate'
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const seriesStore = useSeriesStore()
 
 const {
   needRefresh: pwaNeedRefresh,
@@ -243,12 +245,12 @@ const {
   forceReloadApp
 } = usePwaUpdate()
 
-const profile = ref<any>(null)
-const loading = ref(true)
-
 const targetUserId = computed(() => {
   return route.params.id ? Number(route.params.id) : authStore.user?.id
 })
+
+const profile = ref<any>(targetUserId.value ? seriesStore.getCachedProfile(targetUserId.value) : null)
+const loading = ref(!profile.value)
 
 const isMe = computed(() => {
   return !route.params.id || Number(route.params.id) === authStore.user?.id
@@ -284,13 +286,22 @@ function goToSeries(tmdbId: number) {
   router.push(`/series/${tmdbId}`)
 }
 
-async function loadProfile() {
+async function loadProfile(silent = false) {
   if (!targetUserId.value) return
 
-  loading.value = true
+  const cached = seriesStore.getCachedProfile(targetUserId.value)
+  if (cached && !profile.value) {
+    profile.value = cached
+  }
+
+  if (!profile.value && !silent) {
+    loading.value = true
+  }
+
   try {
     const res = await capyApi.getUserProfile(targetUserId.value)
     profile.value = res.data
+    seriesStore.setCachedProfile(targetUserId.value, res.data)
   } catch (err) {
     console.error('Erro ao carregar perfil:', err)
   } finally {
@@ -307,13 +318,25 @@ watch(
   () => route.params.id,
   () => {
     pwaFeedbackMessage.value = ''
-    loadProfile()
+    if (targetUserId.value) {
+      const cached = seriesStore.getCachedProfile(targetUserId.value)
+      profile.value = cached
+      loading.value = !cached
+    }
+    loadProfile(!!profile.value)
   }
 )
 
 onMounted(() => {
   pwaFeedbackMessage.value = ''
-  loadProfile()
+  loadProfile(!!profile.value)
+})
+
+onActivated(() => {
+  // Atualiza em background de forma silenciosa para não quebrar o scroll
+  if (targetUserId.value) {
+    loadProfile(true)
+  }
 })
 </script>
 

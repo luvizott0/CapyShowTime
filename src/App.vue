@@ -1,8 +1,10 @@
 <template>
   <div class="app-layout">
-    <router-view v-slot="{ Component }">
+    <router-view v-slot="{ Component, route: currentRoute }">
       <transition name="fade" mode="out-in">
-        <component :is="Component" />
+        <keep-alive :include="['DiscoverView', 'ProfileView', 'MyListView', 'UpNextView', 'CommunityView']">
+          <component :is="Component" :key="currentRoute.fullPath" />
+        </keep-alive>
       </transition>
     </router-view>
 

@@ -50,6 +50,30 @@ export const useSeriesStore = defineStore('series', () => {
   const communityLoaded = ref(communityActivities.value.length > 0)
   const isRefreshingCommunity = ref(false)
 
+  // 5. Discover Filter & Search State (Persistente durante a sessão de navegação)
+  const discoverSearchQuery = ref('')
+  const discoverSearchResults = ref<any[]>([])
+  const discoverSelectedGenres = ref<number[]>([])
+  const discoverFilters = ref({
+    minRating: '',
+    sortBy: 'popularity.desc',
+    watchProvider: '',
+    era: '',
+    language: '',
+    status: ''
+  })
+  const discoverFilteredResults = ref<any[]>([])
+  const discoverCurrentPage = ref(1)
+  const discoverTotalPages = ref(1)
+  const discoverTotalFilteredResults = ref(0)
+  const discoverShowFiltersPanel = ref(false)
+
+  // 6. My List Active Tab
+  const myListActiveTab = ref('all')
+
+  // 7. Profile Cache por ID de usuário
+  const profilesCache = ref<Record<number, any>>({})
+
   // Actions
   async function fetchUpNext(force = false) {
     if (!force && upNextLoaded.value) {
@@ -136,6 +160,35 @@ export const useSeriesStore = defineStore('series', () => {
     communityLoaded.value = false
   }
 
+  function getCachedProfile(userId: number) {
+    return profilesCache.value[userId] || null
+  }
+
+  function setCachedProfile(userId: number, data: any) {
+    profilesCache.value[userId] = data
+  }
+
+  function resetDiscoverFilters() {
+    discoverSelectedGenres.value = []
+    discoverFilters.value = {
+      minRating: '',
+      sortBy: 'popularity.desc',
+      watchProvider: '',
+      era: '',
+      language: '',
+      status: ''
+    }
+    discoverFilteredResults.value = []
+    discoverCurrentPage.value = 1
+    discoverTotalPages.value = 1
+    discoverTotalFilteredResults.value = 0
+  }
+
+  function clearDiscoverSearch() {
+    discoverSearchQuery.value = ''
+    discoverSearchResults.value = []
+  }
+
   return {
     upNextList,
     upNextLoaded,
@@ -157,6 +210,27 @@ export const useSeriesStore = defineStore('series', () => {
     communityLoaded,
     isRefreshingCommunity,
     fetchCommunity,
+
+    // Discover Filter State
+    discoverSearchQuery,
+    discoverSearchResults,
+    discoverSelectedGenres,
+    discoverFilters,
+    discoverFilteredResults,
+    discoverCurrentPage,
+    discoverTotalPages,
+    discoverTotalFilteredResults,
+    discoverShowFiltersPanel,
+    resetDiscoverFilters,
+    clearDiscoverSearch,
+
+    // My List
+    myListActiveTab,
+
+    // Profiles Cache
+    profilesCache,
+    getCachedProfile,
+    setCachedProfile,
 
     invalidateAllCache
   }

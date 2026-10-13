@@ -76,7 +76,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Bookmark, Search, Film } from 'lucide-vue-next'
 import { useSeriesStore } from '@/stores/series'
@@ -85,7 +85,10 @@ import RefreshButton from '@/components/RefreshButton.vue'
 
 const router = useRouter()
 const seriesStore = useSeriesStore()
-const currentTab = ref('all')
+const currentTab = computed({
+  get: () => seriesStore.myListActiveTab,
+  set: (val: string) => { seriesStore.myListActiveTab = val }
+})
 
 const tabs = [
   { label: 'Todas', value: 'all' },
@@ -108,7 +111,7 @@ const filteredList = computed(() => {
 })
 
 function setTab(tab: string) {
-  currentTab.value = tab
+  seriesStore.myListActiveTab = tab
 }
 
 function getStatusLabel(status: string): string {

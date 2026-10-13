@@ -149,6 +149,28 @@
             </button>
           </div>
 
+          <!-- Barra de Ações da Temporada Atual -->
+          <div class="season-action-bar">
+            <div class="season-info-count">
+              <span class="mono count-text">{{ episodes.length }} episódios</span>
+              <span v-if="allSeasonWatched && episodes.length > 0" class="season-completed-badge mono">
+                <Check :size="12" stroke-width="3" /> Concluída
+              </span>
+            </div>
+
+            <button
+              v-if="episodes.length > 0"
+              type="button"
+              class="season-watch-all-btn"
+              :class="{ 'all-watched': allSeasonWatched }"
+              :disabled="seasonLoading || isMarkingSeason"
+              @click="handleMarkSeasonWatched"
+            >
+              <CheckCheck :size="15" stroke-width="2.5" />
+              <span>{{ allSeasonWatched ? 'Temporada Assistida' : 'Marcar temporada como assistida' }}</span>
+            </button>
+          </div>
+
           <!-- Lista de Episódios da Temporada -->
           <div v-if="seasonLoading" class="season-loading">
             <div class="spinner"></div>
@@ -201,6 +223,15 @@
       @remove="onRatingRemoved"
     />
 
+    <!-- Modal de Confirmação para Marcar Anteriores -->
+    <MarkPreviousModal
+      :is-open="isMarkPreviousOpen"
+      :episode="targetPreviousEpisode"
+      @close="isMarkPreviousOpen = false"
+      @confirm-all="onConfirmMarkPreviousAll"
+      @confirm-only-this="onConfirmOnlyThisEpisode"
+    />
+
     <!-- Modal de Comentários / Discussão -->
     <EpisodeCommentsModal
       :is-open="isCommentsOpen"
@@ -217,12 +248,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, Film, Star, Users, AlertCircle, RotateCw } from 'lucide-vue-next'
+import { ArrowLeft, Film, Star, Users, AlertCircle, RotateCw, Check, CheckCheck } from 'lucide-vue-next'
 import { capyApi, type Series, type Season, type Episode } from '@/api/capyshowtime'
 import { useSeriesStore } from '@/stores/series'
 import { getPosterUrl, getBackdropUrl } from '@/utils/images'
 import EpisodeCard from '@/components/EpisodeCard.vue'
 import RatingModal from '@/components/RatingModal.vue'
+import MarkPreviousModal from '@/components/MarkPreviousModal.vue'
 import EpisodeCommentsModal from '@/components/EpisodeCommentsModal.vue'
 
 const route = useRoute()
@@ -334,17 +366,110 @@ function goToProfile(userId: number) {
   router.push(`/profile/${userId}`)
 }
 
-async function handleToggleWatched(ep: Episode) {
-  const newWatched = !ep.is_watched
-  ep.is_watched = newWatched
+const isMarkingSeason = ref(false)
+const allSeasonWatched = computed(() => {
+  return episodes.value.length > 0 && episodes.value.every(ep => ep.is_watched)
+})
+
+async function handleMarkSeasonWatched() {
+  if (seasonLoading.value || isMarkingSeason.value) return
+  isMarkingSeason.value = true
   try {
-    const res = await capyApi.rateEpisode(ep.id, ep.user_rating, newWatched)
+    const res = await capyApi.watchSeason(tmdbId, selectedSeasonNum.value)
+    episodes.value = episodes.value.map(ep => ({
+      ...ep,
+      is_watched: true
+    }))
+    if (res.data?.user_status) {
+      userStatus.value = res.data.user_status
+    }
     updateRatingsFromResponse(res.data)
     seriesStore.invalidateAllCache()
   } catch (err) {
-    ep.is_watched = !newWatched // rollback
+    console.error('Erro ao marcar temporada como assistida:', err)
+  } finally {
+    isMarkingSeason.value = false
+  }
+}
+
+// Modal de marcação de episódios anteriores
+const isMarkPreviousOpen = ref(false)
+const targetPreviousEpisode = ref<Episode | null>(null)
+
+async function handleToggleWatched(ep: Episode) {
+  if (ep.is_watched) {
+    // Desmarcando episódio: não precisa de confirmação
+    ep.is_watched = false
+    try {
+      const res = await capyApi.rateEpisode(ep.id, ep.user_rating, false)
+      updateRatingsFromResponse(res.data)
+      seriesStore.invalidateAllCache()
+    } catch (err) {
+      ep.is_watched = true // rollback
+      console.error('Erro ao desmarcar assistido:', err)
+    }
+    return
+  }
+
+  // Marcando como assistido:
+  // Verifica se existem episódios anteriores desmarcados na temporada ou se temporadas anteriores existem
+  const hasUnwatchedPreviousInSeason = episodes.value.some(
+    e => e.episode_number < ep.episode_number && !e.is_watched
+  )
+  const hasPreviousSeasons = selectedSeasonNum.value > 1
+
+  if (hasUnwatchedPreviousInSeason || hasPreviousSeasons) {
+    targetPreviousEpisode.value = ep
+    isMarkPreviousOpen.value = true
+    return
+  }
+
+  await markSingleEpisode(ep)
+}
+
+async function markSingleEpisode(ep: Episode) {
+  ep.is_watched = true
+  try {
+    const res = await capyApi.rateEpisode(ep.id, ep.user_rating, true)
+    updateRatingsFromResponse(res.data)
+    seriesStore.invalidateAllCache()
+  } catch (err) {
+    ep.is_watched = false // rollback
     console.error('Erro ao marcar assistido:', err)
   }
+}
+
+async function onConfirmMarkPreviousAll() {
+  if (!targetPreviousEpisode.value) return
+  const ep = targetPreviousEpisode.value
+  isMarkPreviousOpen.value = false
+
+  // Otimisticamente marca os episódios locais até o selecionado como assistidos
+  episodes.value = episodes.value.map(e => {
+    if (e.episode_number <= ep.episode_number) {
+      return { ...e, is_watched: true }
+    }
+    return e
+  })
+
+  try {
+    const res = await capyApi.watchPreviousEpisodes(ep.id)
+    if (res.data?.user_status) {
+      userStatus.value = res.data.user_status
+    }
+    updateRatingsFromResponse(res.data)
+    seriesStore.invalidateAllCache()
+  } catch (err) {
+    console.error('Erro ao marcar episódios anteriores como assistidos:', err)
+    await selectSeason(selectedSeasonNum.value)
+  }
+}
+
+async function onConfirmOnlyThisEpisode() {
+  if (!targetPreviousEpisode.value) return
+  const ep = targetPreviousEpisode.value
+  isMarkPreviousOpen.value = false
+  await markSingleEpisode(ep)
 }
 
 function openRatingModal(ep: Episode) {
@@ -718,6 +843,69 @@ onMounted(() => {
   background-color: var(--color-accent);
   color: #12100e;
   border-color: var(--color-accent);
+}
+
+.season-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.season-info-count {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.count-text {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.season-completed-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #12100e;
+  background-color: var(--color-accent);
+  padding: 2px 7px;
+  border-radius: var(--radius-sm);
+}
+
+.season-watch-all-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--color-border);
+  color: var(--text-main);
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.season-watch-all-btn:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.season-watch-all-btn.all-watched {
+  background-color: rgba(245, 197, 24, 0.15);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.season-watch-all-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .episodes-list {

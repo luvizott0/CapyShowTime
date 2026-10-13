@@ -104,6 +104,10 @@ export const capyApi = {
     return apiClient.get(`/capyshowtime/series/${tmdbId}/season/${seasonNumber}`)
   },
 
+  watchSeason(tmdbId: number, seasonNumber: number) {
+    return apiClient.post(`/capyshowtime/series/${tmdbId}/season/${seasonNumber}/watch-all`)
+  },
+
   setStatus(tmdbId: number, status: string) {
     return apiClient.post('/capyshowtime/series/status', { tmdb_id: tmdbId, status })
   },
@@ -115,6 +119,10 @@ export const capyApi = {
       is_watched: isWatched,
       remove_rating: removeRating
     })
+  },
+
+  watchPreviousEpisodes(episodeId: number) {
+    return apiClient.post('/capyshowtime/episodes/watch-previous', { episode_id: episodeId })
   },
 
   getMyList(status?: string) {

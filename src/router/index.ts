@@ -11,6 +11,16 @@ import LoginView from '@/views/LoginView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
+  scrollBehavior(_to, _from, savedPosition) {
+    if (savedPosition) {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve(savedPosition)
+        }, 160)
+      })
+    }
+    return { top: 0 }
+  },
   routes: [
     {
       path: '/',

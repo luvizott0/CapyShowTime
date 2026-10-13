@@ -366,7 +366,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   Search,
@@ -388,8 +388,14 @@ import RefreshButton from '@/components/RefreshButton.vue'
 const router = useRouter()
 const seriesStore = useSeriesStore()
 
-const searchQuery = ref('')
-const searchResults = ref<any[]>([])
+const searchQuery = computed({
+  get: () => seriesStore.discoverSearchQuery,
+  set: (v: string) => { seriesStore.discoverSearchQuery = v }
+})
+const searchResults = computed({
+  get: () => seriesStore.discoverSearchResults,
+  set: (v: any[]) => { seriesStore.discoverSearchResults = v }
+})
 const searching = ref(false)
 let debounceTimeout: any = null
 
@@ -442,7 +448,10 @@ function translateGenre(g: { id: number; name: string }) {
 }
 
 // Estado dos filtros
-const showFiltersPanel = ref(false)
+const showFiltersPanel = computed({
+  get: () => seriesStore.discoverShowFiltersPanel,
+  set: (v: boolean) => { seriesStore.discoverShowFiltersPanel = v }
+})
 const genresList = ref<{ id: number; name: string }[]>([
   { id: 10759, name: 'Ação e Aventura' },
   { id: 16, name: 'Animação' },
@@ -460,15 +469,11 @@ const genresList = ref<{ id: number; name: string }[]>([
   { id: 37, name: 'Faroeste' }
 ])
 
-const selectedGenres = ref<number[]>([])
-const filters = reactive({
-  minRating: '',
-  sortBy: 'popularity.desc',
-  watchProvider: '',
-  era: '',
-  language: '',
-  status: ''
+const selectedGenres = computed({
+  get: () => seriesStore.discoverSelectedGenres,
+  set: (v: number[]) => { seriesStore.discoverSelectedGenres = v }
 })
+const filters = seriesStore.discoverFilters
 
 const ratingOptions = [
   { label: 'Qualquer', value: '' },
@@ -497,11 +502,23 @@ const providerOptions = [
   { label: 'Crunchyroll', value: '283' }
 ]
 
-const filteredResults = ref<any[]>([])
+const filteredResults = computed({
+  get: () => seriesStore.discoverFilteredResults,
+  set: (v: any[]) => { seriesStore.discoverFilteredResults = v }
+})
 const discoverLoading = ref(false)
-const currentPage = ref(1)
-const totalPages = ref(1)
-const totalFilteredResults = ref(0)
+const currentPage = computed({
+  get: () => seriesStore.discoverCurrentPage,
+  set: (v: number) => { seriesStore.discoverCurrentPage = v }
+})
+const totalPages = computed({
+  get: () => seriesStore.discoverTotalPages,
+  set: (v: number) => { seriesStore.discoverTotalPages = v }
+})
+const totalFilteredResults = computed({
+  get: () => seriesStore.discoverTotalFilteredResults,
+  set: (v: number) => { seriesStore.discoverTotalFilteredResults = v }
+})
 
 const activeFilterCount = computed(() => {
   let count = 0
@@ -559,17 +576,7 @@ function setFilter(key: 'minRating' | 'sortBy' | 'watchProvider', value: string)
 }
 
 function resetAllFilters() {
-  selectedGenres.value = []
-  filters.minRating = ''
-  filters.sortBy = 'popularity.desc'
-  filters.watchProvider = ''
-  filters.era = ''
-  filters.language = ''
-  filters.status = ''
-  filteredResults.value = []
-  currentPage.value = 1
-  totalPages.value = 1
-  totalFilteredResults.value = 0
+  seriesStore.resetDiscoverFilters()
 }
 
 async function applyDiscoverFilters(resetPage = true) {
@@ -647,8 +654,7 @@ function onSearchInput() {
 }
 
 function clearSearch() {
-  searchQuery.value = ''
-  searchResults.value = []
+  seriesStore.clearDiscoverSearch()
 }
 
 function getYear(dateStr?: string): string {
