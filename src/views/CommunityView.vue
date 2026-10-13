@@ -16,6 +16,30 @@
     </header>
 
     <main class="container page-body">
+      <!-- Amigos da Casa (acesso rápido aos perfis e listas) -->
+      <section v-if="houseUsers.length > 0" class="friends-section fade-in">
+        <h2 class="section-heading mono">Amigos da Casa</h2>
+        <div class="friends-scroll">
+          <div
+            v-for="u in houseUsers"
+            :key="u.id"
+            class="friend-chip"
+            @click="goToProfile(u.id)"
+          >
+            <img
+              v-if="u.avatar_url"
+              :src="u.avatar_url"
+              :alt="u.name"
+              class="friend-avatar"
+            />
+            <div v-else class="friend-avatar-placeholder">
+              {{ u.name.charAt(0) }}
+            </div>
+            <span class="friend-name">{{ u.name.split(' ')[0] }}</span>
+          </div>
+        </div>
+      </section>
+
       <div v-if="seriesStore.isRefreshingCommunity && !seriesStore.communityLoaded" class="loading-state">
         <div class="spinner"></div>
         <p>Carregando atividades...</p>
@@ -28,6 +52,7 @@
       </div>
 
       <div v-else class="activities-list fade-in">
+        <h2 class="section-heading mono">Atividade Recente</h2>
         <div
           v-for="act in seriesStore.communityActivities"
           :key="act.id"
@@ -78,22 +103,34 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Users, Star } from 'lucide-vue-next'
+import { capyApi } from '@/api/capyshowtime'
 import { useSeriesStore } from '@/stores/series'
 import { getPosterUrl } from '@/utils/images'
 import RefreshButton from '@/components/RefreshButton.vue'
 
 const router = useRouter()
 const seriesStore = useSeriesStore()
+const houseUsers = ref<any[]>([])
 
 function resolvePoster(series: any): string {
   return getPosterUrl(series.poster_url || series.poster_path)
 }
 
+async function fetchUsers() {
+  try {
+    const res = await capyApi.getUsers()
+    houseUsers.value = res.data || []
+  } catch (err) {
+    console.error('Erro ao buscar amigos:', err)
+  }
+}
+
 function onForceRefresh() {
   seriesStore.fetchCommunity(true)
+  fetchUsers()
 }
 
 function formatNum(n: number): string {
@@ -110,6 +147,7 @@ function goToSeries(tmdbId: number) {
 
 onMounted(() => {
   seriesStore.fetchCommunity(false)
+  fetchUsers()
 })
 </script>
 
@@ -142,6 +180,82 @@ onMounted(() => {
 
 .page-body {
   padding-top: 20px;
+}
+
+.friends-section {
+  margin-bottom: 24px;
+}
+
+.section-heading {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 12px;
+}
+
+.friends-scroll {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding: 4px 2px 8px;
+  scrollbar-width: none;
+}
+
+.friends-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.friend-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.friend-chip:hover {
+  transform: translateY(-2px);
+}
+
+.friend-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--color-border);
+  transition: border-color 0.2s;
+}
+
+.friend-chip:hover .friend-avatar {
+  border-color: var(--color-accent);
+}
+
+.friend-avatar-placeholder {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  border: 2px solid var(--color-border);
+}
+
+.friend-name {
+  font-size: 0.75rem;
+  color: var(--text-main);
+  font-weight: 500;
+  max-width: 64px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .activities-list {

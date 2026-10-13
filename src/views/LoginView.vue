@@ -23,7 +23,7 @@
             type="text"
             required
             autocomplete="username"
-            placeholder="calebe ou seu@email.com"
+            placeholder="bento ou bento@capihouse.com"
             class="form-input"
           />
         </div>
@@ -50,12 +50,35 @@
           Sua conta é a mesma que você já utiliza no <strong>Capihouse</strong>.
         </p>
       </form>
+
+      <!-- Card de Login Rápido em Ambiente Local / Dev -->
+      <div v-if="devUsers.length > 0" class="dev-login-box">
+        <div class="dev-header mono">
+          ⚡ Teste Local ({{ devUsers.length }} contas)
+        </div>
+        <p class="dev-desc">
+          Selecione um morador para entrar sem digitar senha:
+        </p>
+        <select v-model="selectedDevUserId" class="form-input dev-select">
+          <option v-for="u in devUsers" :key="u.id" :value="u.id">
+            {{ u.name }} (@{{ u.username }}) — {{ u.status.toUpperCase() }}
+          </option>
+        </select>
+        <button
+          type="button"
+          class="btn-secondary dev-submit-btn"
+          :disabled="authStore.isLoading || !selectedDevUserId"
+          @click="handleDevLogin"
+        >
+          <span>🎭 Entrar como Selecionado</span>
+        </button>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Tv } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
@@ -67,15 +90,43 @@ const loginInput = ref('')
 const passwordInput = ref('')
 const errorMessage = ref('')
 
+const devUsers = ref<any[]>([])
+const selectedDevUserId = ref<number | ''>('')
+
 async function handleLogin() {
   errorMessage.value = ''
-  const result = await authStore.login(loginInput.value, passwordInput.value)
+  const result = await authStore.login(loginInput.value.trim(), passwordInput.value)
   if (result.success) {
     router.push('/')
   } else {
     errorMessage.value = result.message || 'Erro ao realizar login'
   }
 }
+
+async function handleDevLogin() {
+  if (!selectedDevUserId.value) return
+  errorMessage.value = ''
+  const result = await authStore.impersonate(Number(selectedDevUserId.value))
+  if (result.success) {
+    router.push('/')
+  } else {
+    errorMessage.value = result.message || 'Erro ao entrar com usuário de teste'
+  }
+}
+
+onMounted(async () => {
+  try {
+    const res = await authStore.getDevUsers()
+    if (res.data?.users) {
+      devUsers.value = res.data.users.filter((u: any) => u.status === 'approved')
+      if (devUsers.value.length > 0) {
+        selectedDevUserId.value = devUsers.value[0].id
+      }
+    }
+  } catch {
+    // Ignorar se não estiver em ambiente local
+  }
+})
 </script>
 
 <style scoped>
@@ -182,5 +233,37 @@ async function handleLogin() {
   font-size: 0.75rem;
   color: var(--text-dim);
   margin-top: 8px;
+}
+
+.dev-login-box {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px dashed var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dev-header {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  text-transform: uppercase;
+}
+
+.dev-desc {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.dev-select {
+  font-size: 0.85rem;
+  padding: 10px 12px;
+}
+
+.dev-submit-btn {
+  width: 100%;
+  border-color: rgba(245, 197, 24, 0.35);
+  color: var(--color-accent);
 }
 </style>

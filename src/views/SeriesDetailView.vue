@@ -111,7 +111,8 @@
               v-for="hm in housemates"
               :key="hm.user.id"
               class="housemate-item"
-              :title="`${hm.user.name} (${hm.status})`"
+              :title="`Ver perfil de ${hm.user.name}`"
+              @click="goToProfile(hm.user.id)"
             >
               <img
                 v-if="hm.user.avatar_url"
@@ -317,10 +318,20 @@ async function onStatusChange(e: Event) {
   try {
     const res = await capyApi.setStatus(tmdbId, val)
     userStatus.value = res.data.status
+    if (val === 'completed' || res.data.marked_episodes_watched) {
+      episodes.value = episodes.value.map(ep => ({
+        ...ep,
+        is_watched: true
+      }))
+    }
     seriesStore.invalidateAllCache()
   } catch (err) {
     console.error('Erro ao alterar status:', err)
   }
+}
+
+function goToProfile(userId: number) {
+  router.push(`/profile/${userId}`)
 }
 
 async function handleToggleWatched(ep: Episode) {
@@ -624,6 +635,12 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   gap: 4px;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.housemate-item:hover {
+  transform: translateY(-2px);
 }
 
 .hm-avatar {

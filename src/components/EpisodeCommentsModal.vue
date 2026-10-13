@@ -30,7 +30,7 @@
             :key="comment.id"
             class="comment-item"
           >
-            <div class="comment-author">
+            <div class="comment-author" @click="goToProfile(comment.user.id)">
               <img
                 v-if="comment.user.avatar_url"
                 :src="comment.user.avatar_url"
@@ -101,8 +101,11 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { X, MessageSquare, AlertTriangle, Heart, Send } from 'lucide-vue-next'
 import { capyApi, type Comment } from '@/api/capyshowtime'
+
+const router = useRouter()
 
 const props = defineProps<{
   isOpen: boolean
@@ -182,6 +185,11 @@ async function submitComment() {
 
 function formatNum(n: number): string {
   return n < 10 ? `0${n}` : `${n}`
+}
+
+function goToProfile(userId: number) {
+  emit('close')
+  router.push(`/profile/${userId}`)
 }
 
 function close() {
@@ -278,6 +286,7 @@ function close() {
   align-items: center;
   gap: 10px;
   margin-bottom: 8px;
+  cursor: pointer;
 }
 
 .author-avatar {

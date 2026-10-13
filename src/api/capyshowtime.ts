@@ -63,6 +63,18 @@ export interface Comment {
   liked_by_me: boolean
 }
 
+export interface DiscoverFilters {
+  sort_by?: string
+  with_genres?: string
+  min_rating?: string | number
+  watch_provider?: string | number
+  year_from?: string | number
+  year_to?: string | number
+  language?: string
+  status?: string
+  page?: number
+}
+
 export const capyApi = {
   search(query: string, page = 1) {
     return apiClient.get('/capyshowtime/search', { params: { q: query, page } })
@@ -74,6 +86,14 @@ export const capyApi = {
 
   popular() {
     return apiClient.get('/capyshowtime/popular')
+  },
+
+  genres() {
+    return apiClient.get('/capyshowtime/genres')
+  },
+
+  discover(filters: DiscoverFilters) {
+    return apiClient.get('/capyshowtime/discover', { params: filters })
   },
 
   getSeries(tmdbId: number) {
@@ -123,6 +143,10 @@ export const capyApi = {
 
   getCommunityActivity() {
     return apiClient.get('/capyshowtime/community-activity')
+  },
+
+  getUsers() {
+    return apiClient.get('/capyshowtime/users')
   },
 
   getUserProfile(userId: number) {

@@ -54,9 +54,40 @@ export const useAuthStore = defineStore('auth', () => {
 
       return { success: true }
     } catch (err: any) {
+      if (!err.response) {
+        return {
+          success: false,
+          message: 'Servidor da API indisponível (verifique se o capihouse-api está rodando na porta 8000).'
+        }
+      }
       return {
         success: false,
         message: err.response?.data?.message || 'Credenciais inválidas'
+      }
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  async function getDevUsers() {
+    return apiClient.get('/auth/dev-users')
+  }
+
+  async function impersonate(userId: number) {
+    isLoading.value = true
+    try {
+      const response = await apiClient.post('/auth/impersonate', {
+        user_id: userId
+      })
+      const newToken = response.data.token || response.data.access_token
+      token.value = newToken
+      localStorage.setItem('capyshowtime_token', newToken)
+      user.value = response.data.user
+      return { success: true }
+    } catch (err: any) {
+      return {
+        success: false,
+        message: err.response?.data?.message || 'Erro ao entrar com usuário de teste.'
       }
     } finally {
       isLoading.value = false
@@ -86,6 +117,8 @@ export const useAuthStore = defineStore('auth', () => {
     isAuthenticated,
     checkAuth,
     login,
+    getDevUsers,
+    impersonate,
     logout,
     clearAuth
   }
