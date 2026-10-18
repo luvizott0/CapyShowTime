@@ -130,7 +130,7 @@ function goToSeries(tmdbId: number) {
 }
 
 onMounted(() => {
-  seriesStore.fetchMyList(false)
+  seriesStore.fetchMyList(true)
 })
 </script>
 

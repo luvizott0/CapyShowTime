@@ -178,7 +178,7 @@ async function handleSaveRating(rating: number) {
 }
 
 onMounted(() => {
-  seriesStore.fetchUpNext(false)
+  seriesStore.fetchUpNext(true)
 })
 </script>
 
