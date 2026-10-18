@@ -76,7 +76,12 @@ export const useSeriesStore = defineStore('series', () => {
 
   // Actions
   async function fetchUpNext(force = false) {
-    if (!force && upNextLoaded.value) {
+    if (!force && upNextLoaded.value && upNextList.value.length > 0) {
+      // Revalida em background sem travar a UI
+      capyApi.getUpNext().then(res => {
+        upNextList.value = res.data
+        saveToStorage(UP_NEXT_CACHE_KEY, res.data)
+      }).catch(err => console.error('Erro ao revalidar Up Next em background:', err))
       return
     }
 
