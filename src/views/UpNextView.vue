@@ -22,14 +22,14 @@
     </header>
 
     <main class="container page-body">
-      <!-- Loading State Inicial (apenas se nunca carregou antes e não tem cache) -->
-      <div v-if="seriesStore.isRefreshingUpNext && !seriesStore.upNextLoaded" class="loading-state">
+      <!-- Loading State Inicial -->
+      <div v-if="seriesStore.isRefreshingUpNext && seriesStore.upNextList.length === 0" class="loading-state">
         <div class="spinner"></div>
         <p>Carregando sua fila...</p>
       </div>
 
       <!-- Empty State -->
-      <div v-else-if="seriesStore.upNextList.length === 0" class="empty-state fade-in">
+      <div v-else-if="!seriesStore.isRefreshingUpNext && seriesStore.upNextList.length === 0" class="empty-state fade-in">
         <div class="empty-icon-box">
           <Tv :size="48" class="empty-icon" />
         </div>
