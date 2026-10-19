@@ -18,11 +18,11 @@
         </div>
 
         <p class="confirmation-text">
-          Você marcou o episódio <strong>E{{ formatNum(episode.episode_number) }}</strong> como assistido, mas existem episódios anteriores que ainda estão desmarcados.
+          Você marcou o episódio <strong>E{{ formatNum(episode.episode_number) }}</strong> como assistido, mas existem episódios anteriores nesta temporada que ainda estão desmarcados.
         </p>
 
         <p class="confirmation-subtext">
-          Deseja marcar também todos os episódios anteriores como assistidos?
+          Deseja marcar também todos os episódios anteriores desta temporada como assistidos?
         </p>
       </div>
 
