@@ -412,13 +412,12 @@ async function handleToggleWatched(ep: Episode) {
   }
 
   // Marcando como assistido:
-  // Verifica se existem episódios anteriores desmarcados na temporada ou se temporadas anteriores existem
+  // Verifica se existem episódios anteriores desmarcados na temporada atual
   const hasUnwatchedPreviousInSeason = episodes.value.some(
     e => e.episode_number < ep.episode_number && !e.is_watched
   )
-  const hasPreviousSeasons = selectedSeasonNum.value > 1
 
-  if (hasUnwatchedPreviousInSeason || hasPreviousSeasons) {
+  if (hasUnwatchedPreviousInSeason) {
     targetPreviousEpisode.value = ep
     isMarkPreviousOpen.value = true
     return
@@ -444,6 +443,11 @@ async function onConfirmMarkPreviousAll() {
   const ep = targetPreviousEpisode.value
   isMarkPreviousOpen.value = false
 
+  // Episódios da temporada atual até o selecionado que ainda não estão marcados
+  const toMark = episodes.value.filter(
+    e => e.episode_number <= ep.episode_number && !e.is_watched
+  )
+
   // Otimisticamente marca os episódios locais até o selecionado como assistidos
   episodes.value = episodes.value.map(e => {
     if (e.episode_number <= ep.episode_number) {
@@ -453,11 +457,10 @@ async function onConfirmMarkPreviousAll() {
   })
 
   try {
-    const res = await capyApi.watchPreviousEpisodes(ep.id)
-    if (res.data?.user_status) {
-      userStatus.value = res.data.user_status
+    for (const item of toMark) {
+      const res = await capyApi.rateEpisode(item.id, item.user_rating, true)
+      updateRatingsFromResponse(res.data)
     }
-    updateRatingsFromResponse(res.data)
     seriesStore.invalidateAllCache()
   } catch (err) {
     console.error('Erro ao marcar episódios anteriores como assistidos:', err)
