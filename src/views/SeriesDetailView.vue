@@ -12,7 +12,8 @@
           v-if="resolveBackdrop(series)"
           :src="resolveBackdrop(series)"
           :alt="series.name"
-          class="backdrop-img"
+          class="backdrop-img clickable"
+          @click="openImageViewer(resolveBackdrop(series))"
         />
         <div class="backdrop-overlay"></div>
         <button class="back-btn" @click="goBack">
@@ -28,7 +29,8 @@
               v-if="resolvePoster(series)"
               :src="resolvePoster(series)"
               :alt="series.name"
-              class="poster-img"
+              class="poster-img clickable"
+              @click="openImageViewer(resolvePoster(series))"
             />
             <div v-else class="poster-placeholder">
               <Film :size="40" />
@@ -242,6 +244,13 @@
       @close="isCommentsOpen = false"
       @comment-added="onCommentAdded"
     />
+
+    <!-- Image Viewer Modal -->
+    <ImageViewerModal
+      :is-open="isImageViewerOpen"
+      :image-url="currentImageUrl"
+      @close="closeImageViewer"
+    />
   </div>
 </template>
 
@@ -256,6 +265,7 @@ import EpisodeCard from '@/components/EpisodeCard.vue'
 import RatingModal from '@/components/RatingModal.vue'
 import MarkPreviousModal from '@/components/MarkPreviousModal.vue'
 import EpisodeCommentsModal from '@/components/EpisodeCommentsModal.vue'
+import ImageViewerModal from '@/components/ImageViewerModal.vue' // Import the new component
 
 const route = useRoute()
 const router = useRouter()
@@ -295,6 +305,20 @@ const selectedSeasonNum = ref<number>(1)
 const isRatingOpen = ref(false)
 const isCommentsOpen = ref(false)
 const activeEpisode = ref<Episode | null>(null)
+
+// Image Viewer Modal
+const isImageViewerOpen = ref(false)
+const currentImageUrl = ref('')
+
+function openImageViewer(url: string) {
+  currentImageUrl.value = url
+  isImageViewerOpen.value = true
+}
+
+function closeImageViewer() {
+  isImageViewerOpen.value = false
+  currentImageUrl.value = ''
+}
 
 const currentSeasonAverage = computed(() => {
   return userRatings.value?.seasons?.[selectedSeasonNum.value]?.average || null
@@ -975,5 +999,9 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   gap: 12px;
+}
+
+.clickable {
+  cursor: pointer;
 }
 </style>
