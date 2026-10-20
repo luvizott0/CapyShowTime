@@ -201,7 +201,7 @@ function formatDate(dateStr: string): string {
 .check-btn {
   width: 32px;
   height: 32px;
-  border-radius: var(--radius-full);
+  border-radius: 50%; /* Alterado de var(--radius-full) para 50% */
   display: flex;
   align-items: center;
   justify-content: center;
