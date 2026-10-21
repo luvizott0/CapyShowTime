@@ -229,7 +229,7 @@ function formatDate(dateStr: string): string {
   font-size: 0.75rem;
   font-weight: 700;
   padding: 6px 10px;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-sm);
   background-color: var(--bg-surface-elevated);
   border: 1px solid var(--color-border);
   color: var(--text-muted);
@@ -248,7 +248,7 @@ function formatDate(dateStr: string): string {
   gap: 4px;
   font-size: 0.75rem;
   padding: 6px 10px;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-sm);
   background-color: var(--bg-surface-elevated);
   border: 1px solid var(--color-border);
   color: var(--text-muted);
