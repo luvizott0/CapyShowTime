@@ -601,7 +601,7 @@ onMounted(() => {
   left: 16px;
   width: 38px;
   height: 38px;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-sm);
   background-color: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(8px);
   color: var(--text-main);
@@ -912,7 +912,7 @@ onMounted(() => {
   border: 1px solid var(--color-border);
   color: var(--text-main);
   padding: 6px 12px;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-sm);
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
@@ -970,7 +970,7 @@ onMounted(() => {
   width: 80px;
   height: 80px;
   background-color: var(--bg-surface-elevated);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-sm);
   display: inline-flex;
   align-items: center;
   justify-content: center;
