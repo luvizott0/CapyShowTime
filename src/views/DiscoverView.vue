@@ -191,15 +191,48 @@
 
       <!-- Search Results -->
       <section v-else-if="searchQuery.trim()" class="section fade-in">
-        <h2 class="section-title mono">Resultados da Busca</h2>
+        <div class="results-header">
+          <h2 class="section-title mono">Resultados da Busca</h2>
+
+          <!-- Seletor de visualização -->
+          <div class="view-mode-toggle">
+            <button
+              type="button"
+              class="view-toggle-btn"
+              :class="{ active: viewMode === 'normal' }"
+              title="Visualização Padrão (com detalhes)"
+              @click="setViewMode('normal')"
+            >
+              <LayoutGrid :size="16" />
+              <span class="mode-label">Padrão</span>
+            </button>
+
+            <button
+              type="button"
+              class="view-toggle-btn"
+              :class="{ active: viewMode === 'compact' }"
+              title="Visualização Compacta (apenas capas, 4 por linha)"
+              @click="setViewMode('compact')"
+            >
+              <Grid :size="16" />
+              <span class="mode-label">4 por linha</span>
+            </button>
+          </div>
+        </div>
+
         <div v-if="searchResults.length === 0" class="empty-search">
           <p>Nenhuma série encontrada para "{{ searchQuery }}".</p>
         </div>
-        <div v-else class="series-grid">
+        <div
+          v-else
+          class="series-grid"
+          :class="{ 'compact-grid': viewMode === 'compact' }"
+        >
           <div
             v-for="show in searchResults"
             :key="show.id"
             class="series-card"
+            :class="{ 'is-compact': viewMode === 'compact' }"
             @click="goToSeries(show.id)"
           >
             <div class="poster-container">
@@ -213,11 +246,15 @@
               <div v-else class="poster-placeholder">
                 <Film :size="28" />
               </div>
-              <div v-if="show.vote_average" class="rating-badge mono">
+              <div
+                v-if="show.vote_average"
+                class="rating-badge mono"
+                :class="{ 'rating-mini': viewMode === 'compact' }"
+              >
                 ★ {{ show.vote_average.toFixed(1) }}
               </div>
             </div>
-            <div class="series-info">
+            <div v-if="viewMode !== 'compact'" class="series-info">
               <h3 class="series-title">{{ show.name }}</h3>
               <span class="series-year">{{ getYear(show.first_air_date) }}</span>
             </div>
@@ -234,10 +271,36 @@
               {{ totalFilteredResults }} séries encontradas no TMDB
             </p>
           </div>
-          <button type="button" class="clear-inline-btn" @click="resetAllFilters">
-            <X :size="14" />
-            <span>Limpar</span>
-          </button>
+          <div class="filtered-actions">
+            <div class="view-mode-toggle">
+              <button
+                type="button"
+                class="view-toggle-btn"
+                :class="{ active: viewMode === 'normal' }"
+                title="Visualização Padrão (com detalhes)"
+                @click="setViewMode('normal')"
+              >
+                <LayoutGrid :size="16" />
+                <span class="mode-label">Padrão</span>
+              </button>
+
+              <button
+                type="button"
+                class="view-toggle-btn"
+                :class="{ active: viewMode === 'compact' }"
+                title="Visualização Compacta (apenas capas, 4 por linha)"
+                @click="setViewMode('compact')"
+              >
+                <Grid :size="16" />
+                <span class="mode-label">4 por linha</span>
+              </button>
+            </div>
+
+            <button type="button" class="clear-inline-btn" @click="resetAllFilters">
+              <X :size="14" />
+              <span>Limpar</span>
+            </button>
+          </div>
         </div>
 
         <div v-if="discoverLoading && filteredResults.length === 0" class="loading-state">
@@ -253,11 +316,15 @@
         </div>
 
         <div v-else>
-          <div class="series-grid">
+          <div
+            class="series-grid"
+            :class="{ 'compact-grid': viewMode === 'compact' }"
+          >
             <div
               v-for="show in filteredResults"
               :key="show.id"
               class="series-card"
+              :class="{ 'is-compact': viewMode === 'compact' }"
               @click="goToSeries(show.id)"
             >
               <div class="poster-container">
@@ -271,11 +338,15 @@
                 <div v-else class="poster-placeholder">
                   <Film :size="28" />
                 </div>
-                <div v-if="show.vote_average" class="rating-badge mono">
+                <div
+                  v-if="show.vote_average"
+                  class="rating-badge mono"
+                  :class="{ 'rating-mini': viewMode === 'compact' }"
+                >
                   ★ {{ show.vote_average.toFixed(1) }}
                 </div>
               </div>
-              <div class="series-info">
+              <div v-if="viewMode !== 'compact'" class="series-info">
                 <h3 class="series-title">{{ show.name }}</h3>
                 <span class="series-year">{{ getYear(show.first_air_date) }}</span>
               </div>
@@ -297,13 +368,46 @@
 
       <!-- Trending / Popular (padrão sem filtros ativos) -->
       <div v-else class="fade-in">
+        <div class="discover-browse-header">
+          <span class="results-count mono">Destaques do Catálogo</span>
+
+          <!-- Seletor de visualização -->
+          <div class="view-mode-toggle">
+            <button
+              type="button"
+              class="view-toggle-btn"
+              :class="{ active: viewMode === 'normal' }"
+              title="Visualização Padrão (com detalhes)"
+              @click="setViewMode('normal')"
+            >
+              <LayoutGrid :size="16" />
+              <span class="mode-label">Padrão</span>
+            </button>
+
+            <button
+              type="button"
+              class="view-toggle-btn"
+              :class="{ active: viewMode === 'compact' }"
+              title="Visualização Compacta (apenas capas, 4 por linha)"
+              @click="setViewMode('compact')"
+            >
+              <Grid :size="16" />
+              <span class="mode-label">4 por linha</span>
+            </button>
+          </div>
+        </div>
+
         <section class="section">
           <h2 class="section-title mono">Em Alta Esta Semana</h2>
-          <div class="series-grid">
+          <div
+            class="series-grid"
+            :class="{ 'compact-grid': viewMode === 'compact' }"
+          >
             <div
               v-for="show in seriesStore.trendingShows"
               :key="show.id"
               class="series-card"
+              :class="{ 'is-compact': viewMode === 'compact' }"
               @click="goToSeries(show.id)"
             >
               <div class="poster-container">
@@ -317,11 +421,15 @@
                 <div v-else class="poster-placeholder">
                   <Film :size="28" />
                 </div>
-                <div v-if="show.vote_average" class="rating-badge mono">
+                <div
+                  v-if="show.vote_average"
+                  class="rating-badge mono"
+                  :class="{ 'rating-mini': viewMode === 'compact' }"
+                >
                   ★ {{ show.vote_average.toFixed(1) }}
                 </div>
               </div>
-              <div class="series-info">
+              <div v-if="viewMode !== 'compact'" class="series-info">
                 <h3 class="series-title">{{ show.name }}</h3>
                 <span class="series-year">{{ getYear(show.first_air_date) }}</span>
               </div>
@@ -331,11 +439,15 @@
 
         <section class="section">
           <h2 class="section-title mono">Mais Populares</h2>
-          <div class="series-grid">
+          <div
+            class="series-grid"
+            :class="{ 'compact-grid': viewMode === 'compact' }"
+          >
             <div
               v-for="show in seriesStore.popularShows"
               :key="show.id"
               class="series-card"
+              :class="{ 'is-compact': viewMode === 'compact' }"
               @click="goToSeries(show.id)"
             >
               <div class="poster-container">
@@ -349,11 +461,15 @@
                 <div v-else class="poster-placeholder">
                   <Film :size="28" />
                 </div>
-                <div v-if="show.vote_average" class="rating-badge mono">
+                <div
+                  v-if="show.vote_average"
+                  class="rating-badge mono"
+                  :class="{ 'rating-mini': viewMode === 'compact' }"
+                >
                   ★ {{ show.vote_average.toFixed(1) }}
                 </div>
               </div>
-              <div class="series-info">
+              <div v-if="viewMode !== 'compact'" class="series-info">
                 <h3 class="series-title">{{ show.name }}</h3>
                 <span class="series-year">{{ getYear(show.first_air_date) }}</span>
               </div>
@@ -378,7 +494,9 @@ import {
   Tv,
   Calendar,
   Globe,
-  RotateCcw
+  RotateCcw,
+  LayoutGrid,
+  Grid
 } from 'lucide-vue-next'
 import { capyApi } from '@/api/capyshowtime'
 import { useSeriesStore } from '@/stores/series'
@@ -387,6 +505,15 @@ import RefreshButton from '@/components/RefreshButton.vue'
 
 const router = useRouter()
 const seriesStore = useSeriesStore()
+
+// Modo de visualização: 'normal' ou 'compact' (4 capas por linha)
+const savedViewMode = (localStorage.getItem('capyshowtime_view_mode') as 'normal' | 'compact') || 'normal'
+const viewMode = ref<'normal' | 'compact'>(savedViewMode)
+
+function setViewMode(mode: 'normal' | 'compact') {
+  viewMode.value = mode
+  localStorage.setItem('capyshowtime_view_mode', mode)
+}
 
 const searchQuery = computed({
   get: () => seriesStore.discoverSearchQuery,
@@ -709,7 +836,7 @@ onMounted(() => {
   align-items: center;
   gap: 6px;
   padding: 8px 12px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   background-color: var(--bg-surface-elevated);
   border: 1px solid var(--color-border);
   color: var(--text-muted);
@@ -730,7 +857,7 @@ onMounted(() => {
   font-size: 0.7rem;
   font-weight: 700;
   padding: 1px 6px;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-sm);
 }
 
 .search-bar {
@@ -738,7 +865,7 @@ onMounted(() => {
   align-items: center;
   background-color: var(--bg-surface-elevated);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   padding: 0 12px;
   gap: 8px;
 }
@@ -762,10 +889,10 @@ onMounted(() => {
   padding: 4px;
 }
 
-/* Barra de Gêneros */
+/* Barra de Gêneros - Pílulas quadradas estilo retrô */
 .genres-scroll-bar {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   overflow-x: auto;
   padding: 12px 0 4px;
   scrollbar-width: none;
@@ -776,12 +903,12 @@ onMounted(() => {
 }
 
 .genre-pill {
-  padding: 6px 14px;
-  border-radius: var(--radius-full);
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
   background-color: var(--bg-surface-elevated);
   border: 1px solid var(--color-border);
   color: var(--text-muted);
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
   white-space: nowrap;
   transition: all 0.2s;
@@ -789,6 +916,7 @@ onMounted(() => {
 
 .genre-pill:hover {
   color: var(--text-main);
+  border-color: var(--color-primary-light);
 }
 
 .genre-pill.active {
@@ -917,11 +1045,32 @@ onMounted(() => {
   margin-bottom: 32px;
 }
 
+/* Cabeçalhos com Seletor de Modo de Visualização */
+.results-header,
+.discover-browse-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 12px;
+}
+
+.results-header .section-title {
+  margin-bottom: 0;
+}
+
+.results-count {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
 .filtered-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 16px;
+  gap: 12px;
 }
 
 .filtered-header .section-title {
@@ -931,6 +1080,12 @@ onMounted(() => {
 .filtered-subtitle {
   font-size: 0.78rem;
   color: var(--text-muted);
+}
+
+.filtered-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .clear-inline-btn {
@@ -951,32 +1106,51 @@ onMounted(() => {
   margin-bottom: 16px;
 }
 
+/* Grade Padrão */
 .series-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 16px;
+  gap: 14px;
 }
 
 @media (min-width: 640px) {
   .series-grid {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 16px;
+  }
+}
+
+/* Grade Compacta: 4 por linha apenas capas estilo CapyFlix */
+.series-grid.compact-grid {
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 8px;
+}
+
+@media (min-width: 640px) {
+  .series-grid.compact-grid {
+    gap: 12px;
   }
 }
 
 .series-card {
   cursor: pointer;
   transition: transform 0.2s;
+  width: 100%;
 }
 
 .series-card:hover {
   transform: translateY(-4px);
 }
 
+.series-card.is-compact:hover {
+  transform: translateY(-3px) scale(1.02);
+}
+
 .poster-container {
   position: relative;
   width: 100%;
   aspect-ratio: 2 / 3;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   overflow: hidden;
   background-color: var(--bg-surface-elevated);
   border: 1px solid var(--color-border);
@@ -986,6 +1160,11 @@ onMounted(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.series-card:hover .poster-img {
+  transform: scale(1.03);
 }
 
 .poster-placeholder {
@@ -1008,6 +1187,14 @@ onMounted(() => {
   padding: 2px 6px;
   border-radius: var(--radius-sm);
   backdrop-filter: blur(4px);
+}
+
+.rating-badge.rating-mini {
+  top: 4px;
+  right: 4px;
+  font-size: 0.62rem;
+  padding: 1px 4px;
+  border-radius: 2px;
 }
 
 .series-info {

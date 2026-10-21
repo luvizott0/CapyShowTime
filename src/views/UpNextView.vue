@@ -224,7 +224,7 @@ onMounted(() => {
   justify-content: center;
   background-color: var(--bg-surface-elevated);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-sm);
   color: var(--text-main);
   transition: all 0.2s;
 }
@@ -267,7 +267,7 @@ onMounted(() => {
   width: 80px;
   height: 80px;
   background-color: var(--bg-surface-elevated);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-sm);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -420,7 +420,7 @@ onMounted(() => {
   font-weight: 700;
   font-size: 0.85rem;
   padding: 8px 16px;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-sm);
   transition: all 0.2s;
 }
 
